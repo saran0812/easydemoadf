@@ -36,7 +36,7 @@
 						"value": "@variables('fileNames')",
 						"type": "Expression"
 					},
-					"isSequential": false,
+					"isSequential": true,
 					"activities": [
 						{
 							"name": "Execute cricket Pipeline",
