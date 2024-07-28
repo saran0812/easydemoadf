@@ -107,7 +107,7 @@
 				"typeProperties": {
 					"method": "GET",
 					"url": {
-						"value": "@concat('https://akvlearneasy.vault.azure.net/secrets/apikey/e4f1948116da45648e61064ae4a021b9','?api-version=7.0')",
+						"value": "@concat('https://akvlearneasy.vault.azure.net/secrets/apikey/99d9e3fed5e9483983010f2c2b5d9e8f','?api-version=7.0')",
 						"type": "Expression"
 					},
 					"authentication": {
