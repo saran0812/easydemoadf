@@ -20,9 +20,6 @@
 		"Snowflake1_properties_typeProperties_database": {
 			"value": "easy_stage"
 		},
-		"sastagingeasygo_sasUri": {
-			"value": ""
-		},
 		"containerUri": {
 			"value": ""
 		},

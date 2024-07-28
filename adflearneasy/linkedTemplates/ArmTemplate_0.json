@@ -23,10 +23,6 @@
 			"type": "string",
 			"defaultValue": "@{concat(concat(concat(concat(concat('https://api.sportradar.com/cricket-t2/en/schedules/',linkedService().linkDate),'/'),linkedService().dailyType),'.json?api_key='),linkedService().apiKey)}"
 		},
-		"sastagingeasygo_sasUri": {
-			"type": "secureString",
-			"metadata": "Secure string for 'sasUri' of 'sastagingeasygo'"
-		},
 		"Snowflake1_properties_typeProperties_database": {
 			"type": "string",
 			"defaultValue": "easy_stage"
@@ -76,8 +72,7 @@
 						"type": "string"
 					},
 					"apiKey": {
-						"type": "string",
-						"defaultValue": "g2akxKQaXS3agBEUjFlZ54R5hrvLClnD8wCC9tJG"
+						"type": "string"
 					},
 					"dailyType": {
 						"type": "String"
@@ -89,19 +84,6 @@
 					"url": "[parameters('CricketAPI_properties_typeProperties_url')]",
 					"enableServerCertificateValidation": true,
 					"authenticationType": "Anonymous"
-				}
-			},
-			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/sastagingeasygo')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"sasUri": "[parameters('sastagingeasygo_sasUri')]"
 				}
 			},
 			"dependsOn": []
@@ -299,7 +281,7 @@
 							{
 								"activity": "Get ApiKey",
 								"dependencyConditions": [
-									"Completed"
+									"Succeeded"
 								]
 							}
 						],
@@ -397,7 +379,10 @@
 						"typeProperties": {
 							"method": "GET",
 							"headers": {},
-							"url": "https://kveasytestgo.vault.azure.net/secrets/apikey/72d55aab77bb4ecaba4a1091b0c55184?api-version=7.0",
+							"url": {
+								"value": "@concat('https://akvlearneasy.vault.azure.net/secrets/apikey/99d9e3fed5e9483983010f2c2b5d9e8f','?api-version=7.0')",
+								"type": "Expression"
+							},
 							"authentication": {
 								"type": "MSI",
 								"resource": "https://vault.azure.net"
