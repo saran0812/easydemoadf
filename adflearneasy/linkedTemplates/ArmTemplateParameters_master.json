@@ -1,0 +1,33 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "adflearneasy"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://asalearneasy.dfs.core.windows.net/"
+		},
+		"AzureKeyVault_properties_typeProperties_baseUrl": {
+			"value": "https://akvlearneasy.vault.azure.net/"
+		},
+		"CricketAPI_properties_typeProperties_url": {
+			"value": "@{concat(concat(concat(concat(concat('https://api.sportradar.com/cricket-t2/en/schedules/',linkedService().linkDate),'/'),linkedService().dailyType),'.json?api_key='),linkedService().apiKey)}"
+		},
+		"Snowflake1_properties_typeProperties_database": {
+			"value": "easy_stage"
+		},
+		"sastagingeasygo_sasUri": {
+			"value": ""
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}

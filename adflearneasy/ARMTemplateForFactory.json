@@ -1,0 +1,770 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adflearneasy"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://asalearneasy.dfs.core.windows.net/"
+		},
+		"AzureKeyVault_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://akvlearneasy.vault.azure.net/"
+		},
+		"CricketAPI_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "@{concat(concat(concat(concat(concat('https://api.sportradar.com/cricket-t2/en/schedules/',linkedService().linkDate),'/'),linkedService().dailyType),'.json?api_key='),linkedService().apiKey)}"
+		},
+		"Snowflake1_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "easy_stage"
+		},
+		"sastagingeasygo_sasUri": {
+			"type": "secureString",
+			"metadata": "Secure string for 'sasUri' of 'sastagingeasygo'"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Execute Medallion architecture')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Execute Medallion architecture",
+						"type": "Script",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"linkedServiceName": {
+							"referenceName": "Snowflake1",
+							"type": "LinkedServiceReference"
+						},
+						"typeProperties": {
+							"scripts": [
+								{
+									"type": "Query",
+									"text": "---Bronze---\ncreate or replace view easy_hist.bronze.daily_results\nas\nselect\nV:generated_at::date as generated_at,\nres.Value:sport_event.id::string as sport_event_id ,\nres.Value:sport_event.scheduled::string as scheduled,\nres.Value:sport_event.season.end_date::string as season_end_date,\nres.Value:sport_event.season.id::string as season_id,\nres.Value:sport_event.season.name::string as season_name,\nres.Value:sport_event.season.start_date::string as season_start_date,\nres.Value:sport_event.season.year::string as season_year,\nres.Value:sport_event.start_time_tbd::string as start_time_tbd,\nres.Value:sport_event.status::string as status,\nres.Value:sport_event.tournament_round.number::string as tournament_round_number,\nres.Value:sport_event.tournament_round.type::string as tournament_round_type,\nres.Value:sport_event_status.current_inning::string as current_inning,\nres.Value:sport_event_status.display_overs::string as display_overs,\nres.Value:sport_event_status.display_score::string as display_score,\nres.Value:sport_event_status.match_status::string as match_status,\nps.value:away_score::string as away_score,\nps.value:display_score::string as period_scores_display_score,\nps.value:home_score::string as period_scores_home_score,\nps.value:home_wickets::string as period_scores_home_wickets,\nps.value:number::string as period_scores_number,\nps.value:type::string as period_scores_type,\nps.value:away_wickets::string as period_away_wickets,\nres.Value:sport_event_status.remaining_overs::string as remaining_overs,\nres.Value:sport_event_status.required_run_rate::string as required_run_rate,\nres.Value:sport_event_status.status::string as sport_event_status,\nres.Value:sport_event_status.target::string as target,\nres.Value:sport_event_status.toss_decision::string as toss_decision,\nres.Value:sport_event_status.toss_won_by::string as toss_won_by,\nres.Value:sport_event_status.winner_id::string as winner_id\nfrom EASY_STAGE.STAGE_BRONZE.DAILY_RESULTS,\ntable(flatten(V:results)) res,\ntable(flatten(res.Value:sport_event_status.period_scores)) ps;\n\ncreate or replace view easy_hist.bronze.daily_schedule\n  as\nselect\n V:\"generated_at\"::date as generated_at,\nres.Value:id::string as sport_event_id ,\nres.Value:scheduled::string as scheduled,\nres.Value:season.end_date::string as season_end_date,\nres.Value:season.id::string as season_id,\nres.Value:season.name::string as season_name,\nres.Value:season.start_date::string as season_start_date,\nres.Value:season.year::string as season_year,\nres.Value:start_time_tbd::string as start_time_tbd,\nres.Value:status::string as status,\nres.Value:tournament_round.number::string as tournament_round_number,\nres.Value:tournament_round.type::string as tournament_round_type,\nres.Value:tournament.id::varchar as id,\nres.Value:tournament.gender::varchar as gender,\nres.Value:tournament.name::varchar as name,\nres.Value:tournament.type::varchar as type,\nres.Value:tournament.sport.id::varchar as sport_id,\nres.Value:tournament.sport.name::varchar as sport_name,\nres.Value:tournament.category.id::varchar as category_id,\nres.Value:tournament.category.name::varchar as category_name,\nres.Value:tournament.category.country_code::varchar as category_country_code,\nres.Value:venue.id::varchar as venue_id,\nres.Value:venue.name::varchar as venue_name,\nres.Value:venue.capacity::varchar as venue_capacity,\nres.Value:venue.city_name::varchar as venue_city_name,\nres.Value:venue.country_name::varchar as venue_country_name,\nres.Value:venue.map_coordinates::varchar as venue_map_coordinates,\nres.Value:venue.country_code::varchar as venue_country_code,\nres.Value:venue.timezone::varchar as venue_timezone,\nc.Value:id::varchar as competitor_id,\nc.Value:name::varchar as competitor_name,\nc.Value:country::varchar as competitor_country,\nc.Value:country_code::varchar as competitor_country_code,\nc.Value:abbreviation::varchar as competitor_abbreviation,\nc.Value:gender::varchar as competitor_gender,\nc.Value:qualifier::varchar as competitor_qualifier\nfrom EASY_STAGE.STAGE_BRONZE.DAILY_SCHEDULE,\ntable(flatten(V:sport_events)) res,\ntable(flatten(res.Value:competitors)) c;\n\n\n---- season dimension -----\n\n--Silver\ncreate or replace view easy_hist.silver.season_details\nas\nselect season_id, season_name, season_start_date, season_end_date, season_year, generated_at\nfrom easy_hist.bronze.daily_schedule s\ngroup by season_id, season_name, season_start_date, season_end_date, season_year, generated_at;\n--Gold\ncreate or replace table easy_hist.gold.dim_season\nas\nselect * from easy_hist.silver.season_details;\n\n--- competitor dimension -----\n\n--Silver\ncreate or replace view easy_hist.silver.team_details\nas\nselect competitor_id, competitor_name, competitor_country, competitor_gender, competitor_country_code, competitor_abbreviation, generated_at\nfrom easy_hist.bronze.daily_schedule\ngroup by competitor_id, competitor_name, competitor_country, competitor_gender, competitor_country_code, competitor_abbreviation, generated_at;\n\n--Gold\ncreate or replace table easy_hist.gold.dim_teams\nas\nselect * from easy_hist.silver.team_details;\n\n-- results ----\n\nselect sport_event_id, season_id, season_name, toss_won_by, winner_id\nfrom easy_hist.bronze.daily_results\ngroup by sport_event_id, season_id, season_name, toss_won_by, winner_id;\n\n--- daily match winner details ----\n\n--Silver\ncreate or replace view easy_hist.silver.match_result\nas\nselect r.*, c.competitor_name as winner_name from\n(select sport_event_id, season_id, season_name, toss_won_by, winner_id\nfrom easy_hist.bronze.daily_results\ngroup by sport_event_id, season_id, season_name, toss_won_by, winner_id) r\nleft join easy_hist.silver.team_details c\non r.winner_id = c.competitor_id;\n\n--Gold\ncreate or replace table easy_hist.gold.dim_match_result\nas\nselect * from easy_hist.silver.match_result;"
+								}
+							],
+							"scriptBlockExecutionTimeout": "02:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/Snowflake1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Masterpipeline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Set Current Date",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "linkDate",
+							"value": {
+								"value": "@utcNow('yyyy-MM-dd')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Set Current Date",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@variables('fileNames')",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "Execute cricket Pipeline",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "cricketDailyDataLoad",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"linkDate": {
+												"value": "@variables('linkDate')",
+												"type": "Expression"
+											},
+											"dailyType": {
+												"value": "@item()",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "Execute Medallion architecture",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "ForEach1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Execute Medallion architecture",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"linkDate": {
+						"type": "String"
+					},
+					"fileNames": {
+						"type": "Array",
+						"defaultValue": [
+							"results",
+							"schedule"
+						]
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-07-28T06:14:13Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Execute Medallion architecture')]",
+				"[concat(variables('factoryId'), '/pipelines/cricketDailyDataLoad')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/cricketDailyDataLoad')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy daily file to Storage",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Get ApiKey",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"metadata": [
+										{
+											"name": "generated_date",
+											"value": {
+												"value": "@utcNow('yyyy-MM-dd')",
+												"type": "Expression"
+											}
+										}
+									]
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "cricketResultsJson",
+								"type": "DatasetReference",
+								"parameters": {
+									"linkDate": {
+										"value": "@pipeline().parameters.linkDate",
+										"type": "Expression"
+									},
+									"apiKey": {
+										"value": "@activity('Get ApiKey').output.value",
+										"type": "Expression"
+									},
+									"dailyType": {
+										"value": "@pipeline().parameters.dailyType",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "cricketResultsStorageJson",
+								"type": "DatasetReference",
+								"parameters": {
+									"fileName": {
+										"value": "@variables('fileName')",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Get ApiKey",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Set File Name",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kveasytestgo.vault.azure.net/secrets/apikey/72d55aab77bb4ecaba4a1091b0c55184?api-version=7.0",
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Set File Name",
+						"type": "SetVariable",
+						"dependsOn": [],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "fileName",
+							"value": {
+								"value": "@{concat(concat('cricket_',pipeline().parameters.dailyType),'.json')}",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Copy file to archival",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Select fileType execution",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "cricketResultsStorageJson",
+								"type": "DatasetReference",
+								"parameters": {
+									"fileName": "@variables('fileName')"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "cricketResultsStorageJsonArchival",
+								"type": "DatasetReference",
+								"parameters": {
+									"fileName": {
+										"value": "@{concat(concat(concat(concat('cricket_',pipeline().parameters.dailyType),'_'),pipeline().parameters.linkDate),'.json')}",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Copy file to archival",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "cricketResultsStorageJson",
+								"type": "DatasetReference",
+								"parameters": {
+									"fileName": "@variables('fileName')"
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "logs"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Select fileType execution",
+						"type": "Switch",
+						"dependsOn": [
+							{
+								"activity": "Copy daily file to Storage",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"on": {
+								"value": "@pipeline().parameters.dailyType",
+								"type": "Expression"
+							},
+							"cases": [
+								{
+									"value": "results",
+									"activities": [
+										{
+											"name": "Execute Daily Results Snowflake",
+											"type": "Script",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"linkedServiceName": {
+												"referenceName": "Snowflake1",
+												"type": "LinkedServiceReference"
+											},
+											"typeProperties": {
+												"scripts": [
+													{
+														"type": "Query",
+														"text": "truncate table easy_stage.stage_bronze.daily_results;\n\ncopy into easy_stage.stage_bronze.daily_results from 'azure://satesteasygo.blob.core.windows.net/raw/cricket_results.json'\nstorage_integration = easygo_api\nfile_format = (\ntype = 'JSON'\n);"
+													}
+												],
+												"scriptBlockExecutionTimeout": "02:00:00"
+											}
+										}
+									]
+								},
+								{
+									"value": "schedule",
+									"activities": [
+										{
+											"name": "Execute Daily Schedule Snowflake",
+											"type": "Script",
+											"dependsOn": [],
+											"policy": {
+												"timeout": "0.12:00:00",
+												"retry": 0,
+												"retryIntervalInSeconds": 30,
+												"secureOutput": false,
+												"secureInput": false
+											},
+											"userProperties": [],
+											"linkedServiceName": {
+												"referenceName": "Snowflake1",
+												"type": "LinkedServiceReference"
+											},
+											"typeProperties": {
+												"scripts": [
+													{
+														"type": "Query",
+														"text": "truncate table easy_stage.stage_bronze.daily_schedule;\n\ncopy into easy_stage.stage_bronze.daily_schedule from 'azure://satesteasygo.blob.core.windows.net/raw/cricket_schedule.json'\nstorage_integration = easygo_api\nfile_format = (\ntype = 'JSON'\n) ;"
+													}
+												],
+												"scriptBlockExecutionTimeout": "02:00:00"
+											}
+										}
+									]
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"linkDate": {
+						"type": "string",
+						"defaultValue": "2024-01-06"
+					},
+					"dailyType": {
+						"type": "string",
+						"defaultValue": "results"
+					}
+				},
+				"variables": {
+					"fileName": {
+						"type": "String"
+					},
+					"fileNames": {
+						"type": "Array",
+						"defaultValue": [
+							"results",
+							"schedule"
+						]
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-07-28T06:20:08Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/cricketResultsJson')]",
+				"[concat(variables('factoryId'), '/datasets/cricketResultsStorageJson')]",
+				"[concat(variables('factoryId'), '/datasets/cricketResultsStorageJsonArchival')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]",
+				"[concat(variables('factoryId'), '/linkedServices/Snowflake1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/cricketResultsJson')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "CricketAPI",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"linkDate": {
+							"value": "@dataset().linkDate",
+							"type": "Expression"
+						},
+						"apiKey": {
+							"value": "@dataset().apiKey",
+							"type": "Expression"
+						},
+						"dailyType": {
+							"value": "@dataset().dailyType",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"linkDate": {
+						"type": "String"
+					},
+					"apiKey": {
+						"type": "String"
+					},
+					"dailyType": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "HttpServerLocation"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/CricketAPI')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/cricketResultsStorageJson')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"fileName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().fileName",
+							"type": "Expression"
+						},
+						"fileSystem": "raw"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/cricketResultsStorageJsonArchival')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureDataLakeStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"fileName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": {
+							"value": "@dataset().fileName",
+							"type": "Expression"
+						},
+						"fileSystem": "archive"
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureDataLakeStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureKeyVault')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('AzureKeyVault_properties_typeProperties_baseUrl')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/CricketAPI')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"linkDate": {
+						"type": "string"
+					},
+					"apiKey": {
+						"type": "string",
+						"defaultValue": "g2akxKQaXS3agBEUjFlZ54R5hrvLClnD8wCC9tJG"
+					},
+					"dailyType": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "HttpServer",
+				"typeProperties": {
+					"url": "[parameters('CricketAPI_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Anonymous"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Snowflake1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "SnowflakeV2",
+				"typeProperties": {
+					"authenticationType": "Basic",
+					"accountIdentifier": "zxvsczb-dh54182",
+					"user": "saran0812",
+					"database": "[parameters('Snowflake1_properties_typeProperties_database')]",
+					"warehouse": "compute_wh",
+					"password": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "AzureKeyVault",
+							"type": "LinkedServiceReference"
+						},
+						"secretName": "snowflakepass"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureKeyVault')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/sastagingeasygo')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"sasUri": "[parameters('sastagingeasygo_sasUri')]"
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
