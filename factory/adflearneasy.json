@@ -1,0 +1,9 @@
+{
+	"name": "adflearneasy",
+	"location": "australiaeast",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "a4a1ec75-0831-461a-9263-5d274300fad3",
+		"tenantId": "c918287d-391f-4bb6-bad9-69040566ba6e"
+	}
+}
