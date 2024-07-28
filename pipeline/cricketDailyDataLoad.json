@@ -9,7 +9,7 @@
 					{
 						"activity": "Get ApiKey",
 						"dependencyConditions": [
-							"Completed"
+							"Succeeded"
 						]
 					}
 				],
@@ -106,7 +106,10 @@
 				"userProperties": [],
 				"typeProperties": {
 					"method": "GET",
-					"url": "https://kveasytestgo.vault.azure.net/secrets/apikey/72d55aab77bb4ecaba4a1091b0c55184?api-version=7.0",
+					"url": {
+						"value": "@concat('https://akvlearneasy.vault.azure.net/secrets/apikey/e4f1948116da45648e61064ae4a021b9','?api-version=7.0')",
+						"type": "Expression"
+					},
 					"authentication": {
 						"type": "MSI",
 						"resource": "https://vault.azure.net"
