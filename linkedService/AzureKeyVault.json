@@ -4,7 +4,7 @@
 		"annotations": [],
 		"type": "AzureKeyVault",
 		"typeProperties": {
-			"baseUrl": "https://kveasytestgo.vault.azure.net/"
+			"baseUrl": "https://akvlearneasy.vault.azure.net/"
 		}
 	}
 }
