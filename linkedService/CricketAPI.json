@@ -1,14 +1,12 @@
 {
 	"name": "CricketAPI",
-	"type": "Microsoft.DataFactory/factories/linkedservices",
 	"properties": {
 		"parameters": {
 			"linkDate": {
 				"type": "string"
 			},
 			"apiKey": {
-				"type": "string",
-				"defaultValue": "g2akxKQaXS3agBEUjFlZ54R5hrvLClnD8wCC9tJG"
+				"type": "string"
 			},
 			"dailyType": {
 				"type": "String"
@@ -21,5 +19,6 @@
 			"enableServerCertificateValidation": true,
 			"authenticationType": "Anonymous"
 		}
-	}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
 }
