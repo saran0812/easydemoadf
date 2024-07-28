@@ -36,7 +36,7 @@
 						"value": "@variables('fileNames')",
 						"type": "Expression"
 					},
-					"isSequential": false,
+					"isSequential": true,
 					"activities": [
 						{
 							"name": "Execute cricket Pipeline",
@@ -65,6 +65,29 @@
 							}
 						}
 					]
+				}
+			},
+			{
+				"name": "Execute Medallion architecture",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "ForEach1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Execute Medallion architecture",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
 				}
 			}
 		],
