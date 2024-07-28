@@ -1,0 +1,87 @@
+{
+	"name": "Masterpipeline",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set Current Date",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "linkDate",
+					"value": {
+						"value": "@utcNow('yyyy-MM-dd')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Set Current Date",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('fileNames')",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "Execute cricket Pipeline",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "cricketDailyDataLoad",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"linkDate": {
+										"value": "@variables('linkDate')",
+										"type": "Expression"
+									},
+									"dailyType": {
+										"value": "@item()",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"linkDate": {
+				"type": "String"
+			},
+			"fileNames": {
+				"type": "Array",
+				"defaultValue": [
+					"results",
+					"schedule"
+				]
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-07-28T06:14:13Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

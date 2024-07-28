@@ -1,0 +1,25 @@
+{
+	"name": "CricketAPI",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"parameters": {
+			"linkDate": {
+				"type": "string"
+			},
+			"apiKey": {
+				"type": "string",
+				"defaultValue": "g2akxKQaXS3agBEUjFlZ54R5hrvLClnD8wCC9tJG"
+			},
+			"dailyType": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"type": "HttpServer",
+		"typeProperties": {
+			"url": "@{concat(concat(concat(concat(concat('https://api.sportradar.com/cricket-t2/en/schedules/',linkedService().linkDate),'/'),linkedService().dailyType),'.json?api_key='),linkedService().apiKey)}",
+			"enableServerCertificateValidation": true,
+			"authenticationType": "Anonymous"
+		}
+	}
+}

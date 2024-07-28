@@ -1,0 +1,9 @@
+{
+	"name": "adftesteasygo",
+	"location": "australiaeast",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "e564b7c0-61a2-433f-95b3-a5331f9adbb7",
+		"tenantId": "c918287d-391f-4bb6-bad9-69040566ba6e"
+	}
+}

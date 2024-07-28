@@ -1,0 +1,43 @@
+{
+	"name": "cricketResultsJson",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "CricketAPI",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"linkDate": {
+					"value": "@dataset().linkDate",
+					"type": "Expression"
+				},
+				"apiKey": {
+					"value": "@dataset().apiKey",
+					"type": "Expression"
+				},
+				"dailyType": {
+					"value": "@dataset().dailyType",
+					"type": "Expression"
+				}
+			}
+		},
+		"parameters": {
+			"linkDate": {
+				"type": "String"
+			},
+			"apiKey": {
+				"type": "String"
+			},
+			"dailyType": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "HttpServerLocation"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

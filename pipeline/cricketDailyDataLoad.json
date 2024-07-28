@@ -1,0 +1,349 @@
+{
+	"name": "cricketDailyDataLoad",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy daily file to Storage",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Get ApiKey",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "HttpReadSettings",
+							"requestMethod": "GET"
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings",
+							"metadata": [
+								{
+									"name": "generated_date",
+									"value": {
+										"value": "@utcNow('yyyy-MM-dd')",
+										"type": "Expression"
+									}
+								}
+							]
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "cricketResultsJson",
+						"type": "DatasetReference",
+						"parameters": {
+							"linkDate": {
+								"value": "@pipeline().parameters.linkDate",
+								"type": "Expression"
+							},
+							"apiKey": {
+								"value": "@activity('Get ApiKey').output.value",
+								"type": "Expression"
+							},
+							"dailyType": {
+								"value": "@pipeline().parameters.dailyType",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "cricketResultsStorageJson",
+						"type": "DatasetReference",
+						"parameters": {
+							"fileName": {
+								"value": "@variables('fileName')",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Get ApiKey",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "Set File Name",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": "https://kveasytestgo.vault.azure.net/secrets/apikey/72d55aab77bb4ecaba4a1091b0c55184?api-version=7.0",
+					"authentication": {
+						"type": "MSI",
+						"resource": "https://vault.azure.net"
+					}
+				}
+			},
+			{
+				"name": "Set File Name",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "fileName",
+					"value": {
+						"value": "@{concat(concat('cricket_',pipeline().parameters.dailyType),'.json')}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Copy file to archival",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Select fileType execution",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "cricketResultsStorageJson",
+						"type": "DatasetReference",
+						"parameters": {
+							"fileName": "@variables('fileName')"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "cricketResultsStorageJsonArchival",
+						"type": "DatasetReference",
+						"parameters": {
+							"fileName": {
+								"value": "@{concat(concat(concat(concat('cricket_',pipeline().parameters.dailyType),'_'),pipeline().parameters.linkDate),'.json')}",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			},
+			{
+				"name": "Delete1",
+				"type": "Delete",
+				"dependsOn": [
+					{
+						"activity": "Copy file to archival",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "cricketResultsStorageJson",
+						"type": "DatasetReference",
+						"parameters": {
+							"fileName": "@variables('fileName')"
+						}
+					},
+					"logStorageSettings": {
+						"linkedServiceName": {
+							"referenceName": "AzureDataLakeStorage1",
+							"type": "LinkedServiceReference"
+						},
+						"path": "logs"
+					},
+					"enableLogging": true,
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					}
+				}
+			},
+			{
+				"name": "Select fileType execution",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "Copy daily file to Storage",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@pipeline().parameters.dailyType",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "results",
+							"activities": [
+								{
+									"name": "Execute Daily Results Snowflake",
+									"type": "Script",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "Snowflake1",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": "truncate table easy_stage.stage_bronze.daily_results;\n\ncopy into easy_stage.stage_bronze.daily_results from 'azure://satesteasygo.blob.core.windows.net/raw/cricket_results.json'\nstorage_integration = easygo_api\nfile_format = (\ntype = 'JSON'\n);"
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								}
+							]
+						},
+						{
+							"value": "schedule",
+							"activities": [
+								{
+									"name": "Execute Daily Schedule Snowflake",
+									"type": "Script",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"linkedServiceName": {
+										"referenceName": "Snowflake1",
+										"type": "LinkedServiceReference"
+									},
+									"typeProperties": {
+										"scripts": [
+											{
+												"type": "Query",
+												"text": "truncate table easy_stage.stage_bronze.daily_schedule;\n\ncopy into easy_stage.stage_bronze.daily_schedule from 'azure://satesteasygo.blob.core.windows.net/raw/cricket_schedule.json'\nstorage_integration = easygo_api\nfile_format = (\ntype = 'JSON'\n) ;"
+											}
+										],
+										"scriptBlockExecutionTimeout": "02:00:00"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"linkDate": {
+				"type": "string",
+				"defaultValue": "2024-01-06"
+			},
+			"dailyType": {
+				"type": "string",
+				"defaultValue": "results"
+			}
+		},
+		"variables": {
+			"fileName": {
+				"type": "String"
+			},
+			"fileNames": {
+				"type": "Array",
+				"defaultValue": [
+					"results",
+					"schedule"
+				]
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2024-07-28T06:20:08Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
